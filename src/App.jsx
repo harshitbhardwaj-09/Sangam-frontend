@@ -8,7 +8,7 @@ import ProjectsM from './Components/ProjectsM';
 import Project from './Components/Projects';
 import Resources from './Components/Resources';
 import Sidebar from './Components/Sidebar';
-import OfficerTasks from './Components/officerTasks';
+import OfficerTasks from './Components/OfficerTasks';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import ProjectDetails from './Components/ProjectDetails';
 import ChatApp from './Components/Chat';
