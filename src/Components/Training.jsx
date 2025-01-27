@@ -1,176 +1,196 @@
 import React, { useState } from "react";
-import { FaFilePdf, FaFileAlt, FaFileImage, FaCloudUploadAlt } from "react-icons/fa";
-
+import { useNavigate } from "react-router-dom";
+import seminar from "../assets/seminar.jpg";
+import Videos from "../assets/Videos.jpg";
+import meeting from "../assets/meeting.jpg";
+import news from "../assets/news.jpg";
 const TrainingPage = () => {
-  const [documents, setDocuments] = useState([]);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [filterTag, setFilterTag] = useState("All");
-  const [showUploadModal, setShowUploadModal] = useState(false);
-  const [darkMode, setDarkMode] = useState(true);
+  const [pdfFile, setPdfFile] = useState(null);
+  const [documents, setDocuments] = useState([
+    {
+      name: "PDF product page presentation",
+      uploader: "Dobria Steph",
+      task: "Copywriting for all pages",
+      date: "Nov 04, 2022",
+      fileUrl: "/path/to/sample.pdf", // Replace with actual file path if needed
+    },
+    {
+      name: "Latest menu icons + instances",
+      uploader: "Dobria Steph",
+      task: "Copywriting for all pages",
+      date: "Nov 04, 2022",
+      fileUrl: "/path/to/sample2.pdf",
+    },
+    {
+      name: "Terms and Conditions + Privacy Policy",
+      uploader: "Julian Bildea",
+      task: "Implement online payment",
+      date: "Nov 01, 2022",
+      fileUrl: "/path/to/sample3.pdf",
+    },
+  ]);
 
-  // Function to add a new document
-  const addNewDocument = (newDoc) => {
-    setDocuments([...documents, newDoc]);
-    setShowUploadModal(false);
+  const handleFileChange = (event) => {
+    setPdfFile(event.target.files[0]);
   };
 
-  const filteredDocuments = documents.filter(
-    (doc) =>
-      (filterTag === "All" || doc.tags.includes(filterTag)) &&
-      doc.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const handleFileUpload = () => {
+    if (!pdfFile) return alert("Please select a PDF to upload!");
 
+    const fileUrl = URL.createObjectURL(pdfFile); // Creating a temporary URL for the file
+    setDocuments([
+      ...documents,
+      {
+        name: pdfFile.name,
+        uploader: "Current User",
+        task: "New Task",
+        date: new Date().toLocaleDateString(),
+        fileUrl, // Assigning the temporary URL for download
+      },
+    ]);
+    setPdfFile(null); // Reset the file input after upload
+  };
+  const navigate = useNavigate(); // useNavigate hook for navigation
+
+  const handleScheduleMeeting = () => {
+    navigate("/video-conference"); // Navigate to the VideoConferencing page
+  };
   return (
-    
-    <div className={`${darkMode ? "bg-[#101114] text-white" : "bg-white text-gray-900"} min-h-screen p-6`}>
-      {/* Header */}
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Training Page</h1>
-        <button
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
-          onClick={() => setDarkMode(!darkMode)}
-        >
-          Toggle {darkMode ? "Light" : "Dark"} Mode
-        </button>
+    <div className="min-h-screen bg-[#101114] text-white p-6">
+      {/* Top Cards Section */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+        {[
+          {
+            title: "Seminars",
+            image: seminar, // Replace with the correct image source
+            description: "Join our exclusive seminars on therapeutic advancements.",
+            // duration: "Duration: 60 mins",
+            // onClick: () => window.location.href = "/seminars", // Replace with the actual URL
+            onClick: () =>navigate("/seminar"), // Replace with the actual URL
+
+          },
+          {
+            title: "Videos",
+            image: Videos, // Replace with the correct image source
+            description: "Watch our expert-led video sessions anytime, anywhere.",
+            // duration: "Duration: 25 mins",
+            onClick: () =>navigate("/videos"), // Replace with the actual URL
+          },
+          {
+            title: "Schedule meeting",
+            image: meeting, // Replace with the correct image source
+            description: "Set up a meeting with our specialists for personalized advice.",
+            duration: "Flexible Timings",
+            onClick: handleScheduleMeeting, // Custom function for scheduling meetings
+          },
+          {
+            title: "Latest news",
+            image: news, // Replace with the correct image source
+            description: "Stay updated with the latest news and trends.",
+            duration: "Updated Daily",
+            onClick: () =>navigate("/news"), // Replace with the actual URL
+          },
+        ].map(({ title, image, description, duration, onClick }, index) => (
+          <div
+            key={index}
+            className="bg-gray-800 rounded-lg p-6 shadow-md flex flex-col"
+          >
+            <img src={image} alt={title} className="rounded-md mb-4" />
+            <h3 className="text-lg font-semibold mb-2">{title}</h3>
+            <p className="text-gray-400 text-sm mb-4">{description}</p>
+            <p className="text-gray-500 text-sm mb-2">{duration}</p>
+            <button
+              onClick={onClick}
+              className="bg-blue-600 py-2 px-4 rounded-lg text-sm hover:bg-blue-500"
+            >
+              {title === "Schedule meeting" ? "Schedule Meeting" : "Learn More"}
+            </button>
+          </div>
+        ))}
       </div>
 
-      {/* Document Management Section */}
-      <div className="bg-gray-800 rounded-lg p-6 shadow-lg mb-6">
-        {/* Filters */}
+
+      {/* Document Table */}
+      <div className="bg-gray-800 p-6 rounded-lg shadow-md">
+        {/* Table Header */}
         <div className="flex justify-between items-center mb-4">
-          <div className="flex items-center space-x-4">
+          <div className="text-sm">
+            Display <span className="font-semibold">5 documents</span>
+          </div>
+          <div className="flex items-center gap-4">
+            {/* Button to trigger the file input */}
+            <button
+              onClick={() => document.getElementById("file-input").click()}
+              className="bg-blue-600 py-2 px-4 rounded-lg hover:bg-blue-500"
+            >
+              Add New Document
+            </button>
+            <input
+              type="file"
+              id="file-input"
+              accept="application/pdf"
+              onChange={handleFileChange}
+              style={{ display: "none" }} // Hidden input, triggered by the button
+            />
+            <button
+              onClick={handleFileUpload}
+              className="bg-blue-600 py-2 px-4 rounded-lg hover:bg-blue-500"
+            >
+              Upload PDF
+            </button>
             <input
               type="text"
               placeholder="Search documents..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="bg-gray-700 text-white rounded-lg p-2"
+              className="p-2 rounded-lg bg-gray-700 text-white text-sm"
             />
-            <select
-              className="bg-gray-700 text-white rounded-lg p-2"
-              value={filterTag}
-              onChange={(e) => setFilterTag(e.target.value)}
-            >
-              <option>All</option>
-              <option>Marketing</option>
-              <option>Design</option>
-              <option>Policy</option>
-            </select>
           </div>
-          <button
-            className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg flex items-center space-x-2"
-            onClick={() => setShowUploadModal(true)}
-          >
-            <FaCloudUploadAlt /> <span>Add Document</span>
-          </button>
         </div>
 
-        {/* Document List */}
-        <table className="w-full text-left">
+        {/* Table */}
+        <table className="w-full text-left text-sm">
           <thead>
-            <tr className="border-b border-gray-700">
-              <th className="py-2 px-4">Document</th>
-              <th className="py-2 px-4">Uploaded by</th>
-              <th className="py-2 px-4">For task</th>
-              <th className="py-2 px-4">Tags</th>
-              <th className="py-2 px-4">Date</th>
+            <tr className="bg-gray-700 text-gray-400">
+              <th className="py-3 px-4">Name</th>
+              <th className="py-3 px-4">Uploaded By</th>
+              <th className="py-3 px-4">For Task</th>
+              <th className="py-3 px-4">Date</th>
+              <th className="py-3 px-4">Options</th>
             </tr>
           </thead>
           <tbody>
-            {filteredDocuments.map((doc, index) => (
-              <tr
-                key={index}
-                className={`border-b border-gray-700 ${index % 2 === 0 ? "bg-gray-700" : "bg-gray-800"}`}
-              >
-                <td className="py-2 px-4 flex items-center space-x-2">
-                  <span>
-                    {doc.type === "PDF" && <FaFilePdf className="text-red-500" />}
-                    {doc.type === "DOC" && <FaFileAlt className="text-blue-500" />}
-                    {doc.type === "AI" && <FaFileImage className="text-green-500" />}
+            {documents.map((doc, index) => (
+              <tr key={index} className="hover:bg-gray-700 transition duration-200">
+                <td className="py-3 px-4 flex items-center">
+                  <span className="mr-2 bg-red-500 w-6 h-6 flex items-center justify-center text-white rounded-full text-xs">
+                    PDF
                   </span>
-                  <a
-                    href={doc.url}
-                    download={doc.name}
-                    className="hover:underline text-blue-400"
-                  >
+                  <a href={doc.fileUrl} download className="text-blue-400 hover:text-blue-500">
                     {doc.name}
                   </a>
                 </td>
-                <td className="py-2 px-4">{doc.uploader}</td>
-                <td className="py-2 px-4">{doc.task}</td>
-                <td className="py-2 px-4">{doc.tags.join(", ")}</td>
-                <td className="py-2 px-4">{doc.date}</td>
+                <td className="py-3 px-4">{doc.uploader}</td>
+                <td className="py-3 px-4">{doc.task}</td>
+                <td className="py-3 px-4">{doc.date}</td>
+                <td className="py-3 px-4">
+                  <button className="text-gray-400 hover:text-white">•••</button>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
-      </div>
 
-      {/* Upload Modal */}
-      {showUploadModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center">
-          <div className="bg-gray-800 rounded-lg p-6 w-96 shadow-lg">
-            <h2 className="text-lg font-semibold mb-4">Upload New Document</h2>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                const file = e.target.file.files[0];
-                const fileUrl = URL.createObjectURL(file); // Generate a temporary URL for downloading
-                const newDoc = {
-                  name: e.target.name.value,
-                  size: `${(file.size / (1024 * 1024)).toFixed(2)}MB`,
-                  uploader: "Admin",
-                  task: e.target.task.value,
-                  date: new Date().toLocaleDateString(),
-                  type: file.name.split(".").pop().toUpperCase(),
-                  tags: e.target.tags.value.split(","),
-                  url: fileUrl, // Store the generated URL
-                };
-                addNewDocument(newDoc);
-              }}
-            >
-              <input
-                type="text"
-                name="name"
-                placeholder="Document Name"
-                className="bg-gray-700 text-white rounded-lg p-2 w-full mb-4"
-                required
-              />
-              <input
-                type="file"
-                name="file"
-                className="bg-gray-700 text-white rounded-lg p-2 w-full mb-4"
-                required
-              />
-              <input
-                type="text"
-                name="task"
-                placeholder="Task Description"
-                className="bg-gray-700 text-white rounded-lg p-2 w-full mb-4"
-                required
-              />
-              <input
-                type="text"
-                name="tags"
-                placeholder="Tags (comma-separated)"
-                className="bg-gray-700 text-white rounded-lg p-2 w-full mb-4"
-              />
-              <div className="flex justify-end">
-                <button
-                  type="button"
-                  className="bg-gray-600 hover:bg-gray-700 px-4 py-2 rounded-lg mr-2"
-                  onClick={() => setShowUploadModal(false)}
-                >
-                  Cancel
-                </button>
-                <button type="submit" className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg">
-                  Upload
-                </button>
-              </div>
-            </form>
+        {/* Pagination */}
+        <div className="flex justify-between items-center mt-4">
+          <p className="text-gray-400 text-sm">
+            Showing <span className="font-semibold">1 to 5</span> of 43
+          </p>
+          <div className="flex items-center gap-2">
+            <button className="py-1 px-3 rounded-lg bg-gray-700 hover:bg-gray-600">1</button>
+            <button className="py-1 px-3 rounded-lg bg-gray-700 hover:bg-gray-600">2</button>
+            <button className="py-1 px-3 rounded-lg bg-gray-700 hover:bg-gray-600">3</button>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 };

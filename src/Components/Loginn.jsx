@@ -92,7 +92,7 @@ import { motion } from "framer-motion";
 const COLORS = ["#0088FE", "#00C49F"];
 
       
-const Loginn = () => {
+const Loginn = ({resourcesIds}) => {
   const [showModal, setShowModal] = useState(false);
   
 

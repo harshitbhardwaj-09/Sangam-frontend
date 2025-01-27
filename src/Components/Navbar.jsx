@@ -122,7 +122,7 @@
 //demo working code
 import React from "react";
 import { Link } from "react-router-dom"; // Import Link from React Router
-import sung from "../assets/sangamn.png";
+import sung from "../assets/newlogo.svg";
 import profile from "../assets/newone.png";
 import logo from "../assets/sangamLogo.svg";
 import { useState, useEffect } from "react";
@@ -195,12 +195,12 @@ const Navbar = () => {
 
       <nav className="bg-gray-800 text-white shadow-md p-2 flex items-center justify-between fixed top-0 left-0 w-full z-50">
         {/* Left Logo */}
-        <div className="flex items-center ml-5">
+        <div className="flex items-center mt-2">
 
           <img
             src={sung}
             alt="Left Logo"
-            className="h-16 w-50 object-cover"
+            className="h-16 w-60 object-cover"
           />
          
         </div>

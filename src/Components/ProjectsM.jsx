@@ -1,230 +1,304 @@
-import React, { useState, useEffect } from "react";
-import { PieChart, Pie, Cell } from "recharts";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-import { motion } from "framer-motion";
+import React, { useState } from "react";
+import Modal from "react-modal";
 
-const COLORS = ["#0088FE", "#00C49F"];
-
-const ProjectCard = ({ id, name, startDate, description, status, tasks = [], workers, onDelete }) => {
-  const completed = 50; // Example completion percentage, replace with real data if available
-  const data = [
-    { name: "Completed", value: completed },
-    { name: "Pending", value: 100 - completed },
-  ];
-
-  return (
-    <motion.div
-      className="bg-gray-800 p-4 rounded-lg shadow-lg flex flex-col gap-4 group"
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
-      transition={{ type: "spring", stiffness: 300 }}
-    >
-      <div className="flex justify-between items-center">
-        <h3 className="font-semibold text-lg text-white">{name}</h3>
-        <span
-          className={`px-3 py-1 rounded-full text-xs font-bold ${
-            status === "active" ? "bg-green-500" : "bg-red-500"
-          } text-white`}
-        >
-          {status}
-        </span>
-      </div>
-      <p className="text-gray-400 text-sm">{`Start Date: ${new Date(startDate).toLocaleDateString()}`}</p>
-      <p className="text-gray-400 text-sm">{description}</p>
-      <p className="text-gray-400 text-sm">{`${tasks.length} tasks allocated`}</p>
-      <div className="flex justify-between items-center">
-        <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-          <PieChart width={80} height={80}>
-            <Pie data={data} dataKey="value" cx="50%" cy="50%" outerRadius={35} fill="#8884d8">
-              {data.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={COLORS[index]} />
-              ))}
-            </Pie>
-          </PieChart>
-        </motion.div>
-        <motion.button
-          onClick={() => {
-            toast.success("Project Deleted!");
-            onDelete(id);
-          }}
-          className="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-700 transition"
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          Delete
-        </motion.button>
-      </div>
-    </motion.div>
-  );
+const customModalStyles = {
+  content: {
+    top: "50%",
+    left: "50%",
+    right: "auto",
+    bottom: "auto",
+    marginRight: "-50%",
+    transform: "translate(-50%, -50%)",
+    backgroundColor: "#1E293B", // Dark mode modal background
+    color: "white",
+    borderRadius: "10px",
+    padding: "20px",
+    width: "400px",
+  },
+  overlay: {
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
+  },
 };
 
-const ProjectsM = () => {
-  const [projects, setProjects] = useState([]);
-  const [showModal, setShowModal] = useState(false);
+function Projects() {
+  const [projects, setProjects] = useState([
+    {
+      id: 1,
+      name: "Road Construction",
+      description: "Construction of road between Ghaziabad and Dasna.",
+      projectHead: "Ramesh",
+      status: "Ongoing",
+      team: ["John", "Doe", "Alice", "Bob"],
+    },
+    {
+      id: 2,
+      name: "Bridge Construction",
+      description: "Bridge over Yamuna River.",
+      projectHead: "Suresh",
+      status: "Completed",
+      team: ["Eve", "Charlie", "Mallory"],
+    },
+    {
+      id: 3,
+      name: "School Building",
+      description: "Construction of a school in Noida.",
+      projectHead: "Kavita",
+      status: "Pending",
+      team: ["Anna", "Chris", "Sam"],
+    },
+  ]);
+
   const [newProject, setNewProject] = useState({
     name: "",
-    startDate: "",
     description: "",
-    projectAdmin: "",
-    workers: [],
-    tasks: [],
-    status: "active",
+    projectHead: "",
+    status: "Ongoing",
+    team: "",
   });
 
-  // Fetch Projects
-  useEffect(() => {
-    fetchProjects();
-  }, []);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedProject, setSelectedProject] = useState(null); // Store selected project for viewing
 
-  const fetchProjects = async () => {
-    try {
-      const response = await fetch("https://backend-code-4-nnid.onrender.com/api/getallprojects");
-      const data = await response.json();
-      setProjects(data);
-    } catch (error) {
-      toast.error("Failed to fetch projects");
+  const handleAddProject = () => {
+    if (newProject.name && newProject.description && newProject.projectHead) {
+      setProjects([
+        ...projects,
+        {
+          id: projects.length + 1,
+          ...newProject,
+          team: newProject.team.split(",").map((member) => member.trim()),
+        },
+      ]);
+      setNewProject({
+        name: "",
+        description: "",
+        projectHead: "",
+        status: "Ongoing",
+        team: "",
+      });
+      setIsModalOpen(false);
     }
   };
 
-  const createProject = async () => {
+  const filteredProjects = projects.filter((project) =>
+    project.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const categorizedProjects = (status) =>
+    filteredProjects.filter((project) => project.status === status);
+
+  const handleViewProject = (project) => {
+    setSelectedProject(project);
+    setIsModalOpen(true); // Open modal to view detailed project info
+  };
+  const handleUpdateProject = async () => {
+    const updatedProject = {
+      name: selectedProject.name,
+      status: selectedProject.status,
+      departments: selectedProject.departments,
+      startDate: selectedProject.startDate,
+      endDate: selectedProject.endDate,
+    };
+
     try {
-      const response = await fetch("https://backend-code-4-nnid.onrender.com/api/project", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newProject),
-      });
+      const response = await fetch(
+        `http://localhost:8000/api/updateproject/${selectedProject._id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(updatedProject),
+        }
+      );
+
       if (response.ok) {
-        fetchProjects(); // Refresh project list
-        toast.success("Project created successfully");
-        setShowModal(false);
-        setNewProject({
-          name: "",
-          startDate: "",
-          description: "",
-          projectAdmin: "",
-          workers: [],
-          tasks: [],
-          status: "active",
-        });
+        const updatedData = await response.json();
+        setProjects((prevProjects) =>
+          prevProjects.map((project) =>
+            project.id === selectedProject.id ? updatedData : project
+          )
+        );
+        setIsModalOpen(false);
       } else {
-        toast.error("Failed to create project");
+        console.error("Failed to update project");
       }
     } catch (error) {
-      toast.error("Failed to create project");
+      console.error("Error updating project:", error);
     }
   };
 
-  const handleDeleteProject = (id) => {
-    setProjects(projects.filter((project) => project._id !== id));
+  const handleEditProject = (project) => {
+    setSelectedProject(project);
+    setIsEditModal(true); // Switch to edit modal
+    setIsModalOpen(true);
   };
-
   return (
-  <div className="p-6 bg-[#101114] min-h-screen text-white">
-
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-3xl font-semibold">Project Management</h2>
-        <motion.button
-          onClick={() => setShowModal(true)}
-          className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 transition"
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          Create New Project
-        </motion.button>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {projects.length > 0 ? (
-          projects.map((project) => (
-            <ProjectCard
-              key={project._id}
-              id={project._id}
-              name={project.name}
-              startDate={project.startDate}
-              description={project.description}
-              status={project.status}
-              tasks={project.taskIds}
-              workers={project.workers}
-              onDelete={handleDeleteProject}
-            />
-          ))
-        ) : (
-          <p>No projects available</p>
-        )}
-      </div>
-
-      {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
-          <div className="bg-gray-800 p-6 rounded-lg w-full max-w-lg shadow-lg">
-            <h3 className="text-xl font-semibold mb-4">Create New Project</h3>
-            <input
-              type="text"
-              placeholder="Project Name"
-              value={newProject.name}
-              onChange={(e) => setNewProject({ ...newProject, name: e.target.value })}
-              className="p-2 bg-gray-700 text-white border border-gray-600 rounded-md mb-4 w-full"
-            />
-            <textarea
-              placeholder="Description"
-              value={newProject.description}
-              onChange={(e) => setNewProject({ ...newProject, description: e.target.value })}
-              className="p-2 bg-gray-700 text-white border border-gray-600 rounded-md mb-4 w-full"
-            />
-            <input
-              type="text"
-              placeholder="Resources (comma-separated)"
-              value={newProject.resources}
-              onChange={(e) => setNewProject({ ...newProject, resources: e.target.value })}
-              className="p-2 bg-gray-700 text-white border border-gray-600 rounded-md mb-4 w-full"
-            />
-            <input
-              type="text"
-              placeholder="Project Admin"
-              value={newProject.projectAdmin}
-              onChange={(e) => setNewProject({ ...newProject, projectAdmin: e.target.value })}
-              className="p-2 bg-gray-700 text-white border border-gray-600 rounded-md mb-4 w-full"
-            />
-            <input
-              type="text"
-              placeholder="Worker IDs (comma-separated)"
-              value={newProject.workerIds}
-              onChange={(e) => setNewProject({ ...newProject, workerIds: e.target.value })}
-              className="p-2 bg-gray-700 text-white border border-gray-600 rounded-md mb-4 w-full"
-            />
-            <input
-              type="text"
-              placeholder="Task IDs (comma-separated)"
-              value={newProject.taskIds}
-              onChange={(e) => setNewProject({ ...newProject, taskIds: e.target.value })}
-              className="p-2 bg-gray-700 text-white border border-gray-600 rounded-md mb-4 w-full"
-            />
-            <div className="flex justify-end gap-4 mt-4">
-              <motion.button
-                onClick={() => setShowModal(false)}
-                className="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-700 transition"
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                Cancel
-              </motion.button>
-              <motion.button
-                onClick={createProject}
-                className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 transition"
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                Create Project
-              </motion.button>
-            </div>
-          </div>
+    <div className="bg-[#101114] min-h-screen p-8 text-gray-100">
+      <header className="mb-8 flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Project Management</h1>
+        <div className="flex items-center gap-4">
+          <input
+            type="text"
+            placeholder="Search Projects"
+            className="px-4 py-2 rounded-md bg-gray-800 text-gray-100 focus:outline-none"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
+          >
+            Create Project
+          </button>
         </div>
+      </header>
+
+      <section>
+        <ProjectSection
+          title="Ongoing Projects"
+          projects={categorizedProjects("Ongoing")}
+          handleEditProject={handleEditProject}
+        />
+        <ProjectSection
+          title="Completed Projects"
+          projects={categorizedProjects("Completed")}
+          handleEditProject={handleEditProject}
+        />
+        <ProjectSection
+          title="Pending Projects"
+          projects={categorizedProjects("Pending")}
+          handleEditProject={handleEditProject}
+        />
+      </section>
+
+
+      {/* Modal for Viewing Detailed Project */}
+      {selectedProject && (
+        <Modal
+          isOpen={isModalOpen}
+          onRequestClose={() => setIsModalOpen(false)}
+          style={customModalStyles}
+          ariaHideApp={false}
+        >
+          <h2 className="text-xl font-bold mb-4">{selectedProject.name}</h2>
+          <p className="text-gray-400">{selectedProject.description}</p>
+          <p className="mt-2 text-sm text-gray-500">
+            <strong>Project Head:</strong> {selectedProject.projectHead}
+          </p>
+          <p className="text-sm text-gray-500">
+            <strong>Team:</strong> {selectedProject.team.join(", ")}
+          </p>
+          <div className="flex justify-end mt-6">
+            <button
+              onClick={() => setIsModalOpen(false)}
+              className="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700"
+            >
+              Close
+            </button>
+          </div>
+        </Modal>
       )}
 
-
-      <ToastContainer />
+      {/* Modal for Adding Projects */}
+      <Modal
+        isOpen={isModalOpen}
+        onRequestClose={() => setIsModalOpen(false)}
+        style={customModalStyles}
+        ariaHideApp={false}
+      >
+        
+        <h2 className="text-xl font-bold mb-4">Create New Project</h2>
+        <div className="space-y-4">
+          <input
+            type="text"
+            placeholder="Project Name"
+            className="w-full px-4 py-2 rounded-md bg-gray-800 text-gray-100 focus:outline-none"
+            value={newProject.name}
+            onChange={(e) => setNewProject({ ...newProject, name: e.target.value })}
+          />
+          <textarea
+            placeholder="Description"
+            className="w-full px-4 py-2 rounded-md bg-gray-800 text-gray-100 focus:outline-none"
+            value={newProject.description}
+            onChange={(e) => setNewProject({ ...newProject, description: e.target.value })}
+          />
+          <input
+            type="text"
+            placeholder="Project Head"
+            className="w-full px-4 py-2 rounded-md bg-gray-800 text-gray-100 focus:outline-none"
+            value={newProject.projectHead}
+            onChange={(e) => setNewProject({ ...newProject, projectHead: e.target.value })}
+          />
+          <select
+            className="w-full px-4 py-2 rounded-md bg-gray-800 text-gray-100 focus:outline-none"
+            value={newProject.status}
+            onChange={(e) => setNewProject({ ...newProject, status: e.target.value })}
+          >
+            <option value="Ongoing">Ongoing</option>
+            <option value="Completed">Completed</option>
+            <option value="Pending">Pending</option>
+          </select>
+          <input
+            type="text"
+            placeholder="Team (comma-separated)"
+            className="w-full px-4 py-2 rounded-md bg-gray-800 text-gray-100 focus:outline-none"
+            value={newProject.team}
+            onChange={(e) => setNewProject({ ...newProject, team: e.target.value })}
+          />
+        </div>
+        <div className="flex justify-end mt-6">
+          <button
+            onClick={() => setIsModalOpen(false)}
+            className="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 mr-4"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleAddProject}
+            className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
+          >
+            Add Project
+          </button>
+        </div>
+      </Modal>
     </div>
   );
-};
+}
 
-export default ProjectsM;
+function ProjectSection({ title, projects, handleViewProject }) {
+  return (
+    <div className="mb-8">
+      <h2 className="text-xl font-semibold mb-4">{title}</h2>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        {projects.map((project) => (
+          <ProjectCard key={project.id} project={project} handleViewProject={handleViewProject} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ProjectCard({ project, handleViewProject }) {
+  return (
+    <div className="bg-gray-800 shadow-md rounded-lg p-4 transform transition-all duration-300 hover:scale-105 hover:shadow-lg">
+      <h3 className="text-lg font-bold text-white">{project.name}</h3>
+      <p className="text-gray-400">{project.description}</p>
+      <p className="mt-2 text-sm text-gray-500">
+        <strong>Project Head:</strong> {project.projectHead}
+      </p>
+      <p className="text-sm text-gray-500">
+        <strong>Team:</strong> {project.team.join(", ")}
+      </p>
+      <button
+        onClick={() => handleViewProject(project)}
+        className="mt-4 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition duration-300"
+      >
+        View Project
+      </button>
+    </div>
+  );
+}
+
+export default Projects;

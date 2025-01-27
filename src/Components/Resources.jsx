@@ -1,261 +1,473 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+// import { Navigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+
 import { PieChart, Pie, Cell } from "recharts";
 
-const COLORS = ["#00C49F", "#FF8042"]; // Colors for the Pie chart
-
-const dummyResources = [
-  {
-    id: 1,
-    name: "JCB",
-    quantity: 10,
-    requester: "Brijesh Gangwar",
-    time: "10 days",
-    projectName: "Road Project A",
-    department: "Road",
-    total: 100,
-    allocated: 75,
-  },
-  {
-    id: 2,
-    name: "Tractor",
-    quantity: 8,
-    requester: "Brijesh Gangwar",
-    time: "12 days",
-    projectName: "Road Project B",
-    department: "Agriculture",
-    total: 100,
-    allocated: 50,
-  },
-];
+const COLORS = ["#00C49F", "#FF8042"]; // Pie chart colors
+// const navigate = useNavigate();
 
 const Resources = () => {
-  const [resources, setResources] = useState(dummyResources);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const navigate = useNavigate();
+  const [projectId, setProjectId] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [resourceId, setResourceId] = useState("");
+  const [resource, setResource] = useState(null);
+  const [resources, setResources] = useState([]);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
+  const [highlightedProjectId, setHighlightedProjectId] = useState("");
   const [newResource, setNewResource] = useState({
     name: "",
-    quantity: "",
-    time: "",
-    requester: "",
-    total: 100,
-    allocated: 0,
+    description: "",
+    unit: "",
   });
-  const [searchTerm, setSearchTerm] = useState("");
-  const [currentView, setCurrentView] = useState("Requested"); // Tracks the current view
+  const [assignResource, setAssignResource] = useState({
+    resourceId: "",
+    projectId: "",
+    quantity: 0,
+  });
 
-  // Open and close modal
-  const openModal = () => setIsModalOpen(true);
-  const closeModal = () => setIsModalOpen(false);
-
-  // Handle form submission
-  const handleFormSubmit = (e) => {
-    e.preventDefault();
-    if (
-      newResource.name &&
-      newResource.quantity &&
-      newResource.time &&
-      newResource.requester
-    ) {
-      setResources([
-        ...resources,
-        { ...newResource, id: resources.length + 1 },
-      ]);
-      setNewResource({
-        name: "",
-        quantity: "",
-        time: "",
-        requester: "",
+  // Fetch resources
+  const fetchResources = async () => {
+    try {
+      const response = await fetch(
+        `https://${import.meta.env.VITE_BACKEND}/api/getallresources`
+      );
+      const data = await response.json();
+      const mappedResources = data.map((resource) => ({
+        id: resource._id,
+        name: resource.name,
+        description: resource.description,
+        unit: resource.unit,
+        allocated: resource.assignments[0]?.quantity || 0,
         total: 100,
-        allocated: 0,
-      });
-      closeModal();
+        assignedTo: resource.assignments[0]?.projectId || null,
+      }));
+      setResources(mappedResources);
+    } catch (error) {
+      console.error("Error fetching resources:", error);
     }
   };
 
-  // Search filter
-  const filteredResources = resources.filter((resource) =>
-    resource.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  useEffect(() => {
+    fetchResources();
+  }, []);
+
+  // Create resource
+  const createResource = async () => {
+    try {
+      const response = await fetch(
+        `https://${import.meta.env.VITE_BACKEND}/api/resource`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(newResource),
+        }
+      );
+      const data = await response.json();
+      if (response.ok) {
+        setResources([...resources, data]);
+        setNewResource({ name: "", description: "", unit: "" });
+        setIsCreateModalOpen(false);
+        setSuccessMessage("Resource created successfully!");
+        setTimeout(() => setSuccessMessage(""), 3000);
+      }
+    } catch (error) {
+      console.error("Error creating resource:", error);
+    }
+  };
+
+  const handleButtonClick = () => {
+    navigate("/reallocate"); // Navigates to the AboutPage
+  };
+
+  // Assign resource
+  const assignResourceToProject = async () => {
+    try {
+      const response = await fetch(
+        `https://${import.meta.env.VITE_BACKEND}/api/resource/assign`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(assignResource),
+        }
+      );
+      if (response.ok) {
+        alert("Resource assigned successfully!");
+        setAssignResource({ resourceId: "", projectId: "", quantity: 0 });
+        setIsAssignModalOpen(false);
+        setHighlightedProjectId(assignResource.projectId);
+        fetchResources(); // Refresh resources to update assigned data
+      }
+    } catch (error) {
+      console.error("Error assigning resource:", error);
+    }
+  };
+  const fetchResourcesByProjectId = async () => {
+    if (!projectId) {
+      setError("Please enter a Project ID.");
+      return;
+    }
+
+    setIsLoading(true);
+    setError("");
+
+    try {
+      const response = await fetch(
+        `https://sangam-c2fm.onrender.com/api/project/${projectId}/resources`
+      );
+      if (!response.ok) {
+        throw new Error("Failed to fetch resources. Please check the Project ID.");
+      }
+      const data = await response.json();
+      setResources(data);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  const fetchResourceById = async () => {
+    if (!resourceId) {
+      setError("Please enter a Resource ID.");
+      return;
+    }
+
+    setIsLoading(true);
+    setError("");
+
+    try {
+      const response = await fetch(
+        `https://${import.meta.env.VITE_BACKEND}/api/resource/${resourceId}`
+      );
+      console.log("Response status:", response.status);
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || "Failed to fetch the resource. Please check the ID.");
+      }
+      const data = await response.json();
+      console.log("Fetched resource data:", data);
+      setResource(data);
+    } catch (err) {
+      console.error("Fetch error:", err);
+      setError(err.message || "An unknown error occurred.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Modal Close
+  const closeModal = () => {
+    setIsCreateModalOpen(false);
+    setIsAssignModalOpen(false);
+  };
 
   return (
-    <div className="bg-[#101114] text-white min-h-screen p-6">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Resource Management</h1>
-        <div className="flex gap-4">
+    <div className="min-h-screen bg-[#101114] text-white px-6 py-8">
+      <header className="mb-6 text-center">
+        <h1 className="text-4xl font-bold">Resources Management</h1>
+        <p className="text-gray-400 mt-2">Manage and assign resources to projects effectively.</p>
+      </header>
+
+      {/* Search Bars */}
+      <div className="flex justify-center gap-6 mb-6">
+        <div className="flex flex-col items-center">
+          <input
+            type="text"
+            placeholder="Search by Resource ID"
+            className="w-64 p-3 bg-gray-700 text-gray-200 rounded mb-4"
+            value={resourceId}
+            onChange={(e) => setResourceId(e.target.value)}
+          />
           <button
-            onClick={openModal}
-            className="bg-green-600 px-4 py-2 rounded-md hover:bg-green-700"
+            onClick={fetchResourceById}
+            className="bg-gray-600 px-6 py-3 rounded-md text-white"
           >
-            Allocate Resources
+            Search Resource
           </button>
-          <button className="bg-blue-600 px-4 py-2 rounded-md hover:bg-blue-700">
-            Bid Resources
+        </div>
+
+        <div className="flex flex-col items-center">
+          <input
+            type="text"
+            placeholder="Search by Project ID"
+            className="w-64 p-3 bg-gray-700 text-gray-200 rounded mb-4"
+            value={projectId}
+            onChange={(e) => setProjectId(e.target.value)}
+          />
+          <button
+            onClick={fetchResourcesByProjectId}
+            className="bg-gray-600 px-6 py-3 rounded-md text-white"
+          >
+            Search Project Resources
           </button>
         </div>
       </div>
 
-      {/* Toggle Buttons */}
-      <div className="flex gap-4 mb-6">
-        <button
-          onClick={() => setCurrentView("Requested")}
-          className={`px-4 py-2 rounded-md ${
-            currentView === "Requested" ? "bg-blue-600" : "bg-gray-600"
-          }`}
-        >
-          Requested Resources
-        </button>
-        <button
-          onClick={() => setCurrentView("Available")}
-          className={`px-4 py-2 rounded-md ${
-            currentView === "Available" ? "bg-green-600" : "bg-gray-600"
-          }`}
-        >
-          Available Resources
-        </button>
-      </div>
+      {/* Resource Display */}
+      {isLoading && <p>Loading...</p>}
+      {error && <p className="text-red-500">{error}</p>}
 
-      {/* Search Bar */}
-      <div className="flex justify-between items-center mb-6">
-        <input
-          type="text"
-          placeholder="Search resources..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full p-3 rounded-md bg-[#1c1f25] border border-gray-600 mr-4"
-        />
-        <select className="p-3 bg-[#1c1f25] rounded-md text-white">
-          <option value="newest">Newest</option>
-          <option value="oldest">Oldest</option>
-        </select>
-      </div>
-
-      {/* Resource Sections */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Requested / Allocated Resources */}
-        <div className="col-span-2">
-          <h2 className="text-2xl font-semibold mb-4">
-            {currentView} Resources
-          </h2>
-          {filteredResources.map((resource) => (
-            <div
-              key={resource.id}
-              className="bg-[#1c1f25] p-4 rounded-lg shadow-md hover:shadow-xl transition-shadow mb-4"
-            >
-              <div className="flex justify-between items-center mb-2">
-                <h3 className="text-xl font-bold">{resource.name}</h3>
-                <span
-                  className={`px-2 py-1 rounded-full text-sm ${
-                    currentView === "Requested" ? "bg-blue-600" : "bg-green-600"
-                  }`}
-                >
-                  {currentView}
-                </span>
-              </div>
-              <p>Name: {resource.requester}</p>
-              <p>Time: {resource.time}</p>
-              <p>Project Name: {resource.projectName}</p>
-              <p>Project Department: {resource.department}</p>
-            </div>
-          ))}
+      {/* Success Message */}
+      {successMessage && (
+        <div className="mb-6 text-center">
+          <div className="bg-green-600 text-white py-2 px-4 rounded-lg inline-block">
+            {successMessage}
+          </div>
         </div>
+      )}
 
-        {/* Available Resources */}
-        <div>
-          <h2 className="text-2xl font-semibold mb-4">Available Resources</h2>
-          {filteredResources.map((resource) => {
-            const available = resource.total - resource.allocated;
-            const data = [
-              { name: "Allocated", value: resource.allocated },
-              { name: "Available", value: available },
-            ];
+      {/* Allocate and Request Buttons */}
+      <div className="flex justify-center gap-6 mb-8">
+        <button
+          onClick={() => setIsCreateModalOpen(true)}
+          className="bg-green-600 px-6 py-3 rounded-md text-white hover:bg-green-700 transition"
+        >
+          Create Resource
+        </button>
+        <button
+          onClick={() => setIsAssignModalOpen(true)}
+          className="bg-blue-600 px-6 py-3 rounded-md text-white hover:bg-blue-700 transition"
+        >
+          Assign Resource
+        </button>
+        <button
+          onClick={handleButtonClick}
+          // onClick={Navigate("/reallocate")}
+          className="bg-yellow-600 px-6 py-3 rounded-md text-white hover:bg-blue-700 transition"
+        >
+          Resource Allocator
+        </button>
+      </div>
 
-            return (
+      {/* Allocated Resources Section */}
+      <div className="mb-12">
+        <h2 className="text-2xl font-semibold text-gray-200 mb-4"></h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {resources
+            .filter((resource) => resource.assignedTo !== null) // Filter for allocated resources
+            .map((resource) => (
               <div
                 key={resource.id}
-                className="bg-[#1c1f25] p-4 rounded-lg shadow-md hover:shadow-xl transition-shadow mb-4"
+                className="bg-gray-800 p-6 rounded-lg shadow-lg relative"
               >
-                <div className="flex justify-between items-center mb-2">
-                  <h3 className="text-xl font-bold">{resource.name}</h3>
-                  <span className="px-2 py-1 rounded-full text-sm bg-green-600">
-                    Available
+                <p><strong>ID:</strong> {resource.id}</p>
+                <h2 className="text-xl font-semibold">{resource.name}</h2>
+                <p className="text-gray-400 mt-2">{resource.description}</p>
+                <p className="text-gray-400 mt-2">Unit: {resource.unit}</p>
+
+                {/* Indicator for Assigned Resource */}
+                {resource.assignedTo === highlightedProjectId && (
+                  <span className="absolute top-2 right-2 bg-blue-500 text-white text-xs px-3 py-1 rounded-full">
+                    Assigned to Project {highlightedProjectId}
                   </span>
+                )}
+
+                <div className="mt-4">
+                  <PieChart width={120} height={120}>
+                    <Pie
+                      data={[
+                        { name: "Allocated", value: resource.allocated },
+                        { name: "Remaining", value: resource.total - resource.allocated },
+                      ]}
+                      dataKey="value"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={50}
+                    >
+                      {COLORS.map((color, index) => (
+                        <Cell key={index} fill={color} />
+                      ))}
+                    </Pie>
+                  </PieChart>
                 </div>
-                <p>Total: {resource.total}</p>
-                <p>Allocated: {resource.allocated}</p>
-                <p>Available: {available}</p>
-                <PieChart width={80} height={80}>
-                  <Pie data={data} dataKey="value" cx="50%" cy="50%" outerRadius={35}>
-                    {data.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index]} />
-                    ))}
-                  </Pie>
-                </PieChart>
+
+                <div className="absolute bottom-2 right-2 space-x-2">
+                  <button className="bg-blue-500 px-4 py-2 rounded text-sm text-white">
+                    Edit
+                  </button>
+                  <button className="bg-red-500 px-4 py-2 rounded text-sm text-white">
+                    Delete
+                  </button>
+                </div>
               </div>
-            );
-          })}
+            ))}
         </div>
       </div>
 
-      {/* Modal for Allocating Resources */}
-      {isModalOpen && (
+      {/* Requested Resources Section */}
+      <div className="mb-12">
+        <h2 className="text-2xl font-semibold text-gray-200 mb-4">Requested Resources</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {resources
+            .filter((resource) => resource.assignedTo === null) // Filter for requested resources
+            .map((resource) => (
+              <div
+                key={resource.id}
+                className="bg-gray-800 p-6 rounded-lg shadow-lg relative"
+              >
+                <p><strong>ID:</strong> {resource.id}</p>
+                <h2 className="text-xl font-semibold">{resource.name}</h2>
+                <p className="text-gray-400 mt-2">{resource.description}</p>
+                <p className="text-gray-400 mt-2">Unit: {resource.unit}</p>
+
+                {/* Indicator for Requested Resource */}
+                <span className="absolute top-2 right-2 bg-yellow-500 text-white text-xs px-3 py-1 rounded-full">
+                  Requested
+                </span>
+
+                <div className="mt-4">
+                  <PieChart width={120} height={120}>
+                    <Pie
+                      data={[
+                        { name: "Requested", value: resource.allocated },
+                        { name: "Remaining", value: resource.total - resource.allocated },
+                      ]}
+                      dataKey="value"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={50}
+                    >
+                      {COLORS.map((color, index) => (
+                        <Cell key={index} fill={color} />
+                      ))}
+                    </Pie>
+                  </PieChart>
+                </div>
+
+                <div className="absolute bottom-2 right-2 space-x-2">
+                  {/* <button className="bg-blue-500 px-4 py-2 rounded text-sm text-white">
+                Edit
+              </button> */}
+                  <button className="bg-red-500 px-4 py-2 rounded text-sm text-white">
+                    Delete
+                  </button>
+                </div>
+              </div>
+            ))}
+        </div>
+      </div>
+
+      {/* Modals (Create Resource and Assign Resource) */}
+      {isCreateModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
-          <div className="bg-[#1c1f25] p-6 rounded-lg shadow-lg w-96">
-            <h2 className="text-2xl font-bold mb-4">Allocate Resource</h2>
-            <form onSubmit={handleFormSubmit}>
-              <div className="mb-4">
-                <label className="block mb-2">Resource Name</label>
-                <input
-                  type="text"
-                  value={newResource.name}
-                  onChange={(e) =>
-                    setNewResource({ ...newResource, name: e.target.value })
-                  }
-                  className="w-full p-3 rounded-md bg-[#2c3038] border border-gray-600"
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block mb-2">Quantity</label>
-                <input
-                  type="number"
-                  value={newResource.quantity}
-                  onChange={(e) =>
-                    setNewResource({ ...newResource, quantity: e.target.value })
-                  }
-                  className="w-full p-3 rounded-md bg-[#2c3038] border border-gray-600"
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block mb-2">Requester</label>
-                <input
-                  type="text"
-                  value={newResource.requester}
-                  onChange={(e) =>
-                    setNewResource({ ...newResource, requester: e.target.value })
-                  }
-                  className="w-full p-3 rounded-md bg-[#2c3038] border border-gray-600"
-                />
-              </div>
-              <div className="flex justify-end gap-4">
-                <button
-                  type="button"
-                  onClick={closeModal}
-                  className="bg-gray-600 px-4 py-2 rounded-md hover:bg-gray-700"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="bg-green-600 px-4 py-2 rounded-md hover:bg-green-700"
-                >
-                  Save
-                </button>
-              </div>
+          <div className="bg-gray-800 p-6 rounded-md shadow-lg w-96">
+            <h3 className="text-2xl font-semibold text-white mb-4">Create New Resource</h3>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                createResource();
+              }}
+            >
+              <input
+                type="text"
+                placeholder="Name"
+                className="w-full p-3 bg-gray-700 text-gray-200 rounded mb-4"
+                value={newResource.name}
+                onChange={(e) => setNewResource({ ...newResource, name: e.target.value })}
+              />
+              <textarea
+                placeholder="Description"
+                className="w-full p-3 bg-gray-700 text-gray-200 rounded mb-4"
+                value={newResource.description}
+                onChange={(e) => setNewResource({ ...newResource, description: e.target.value })}
+              ></textarea>
+              <input
+                type="text"
+                placeholder="Unit"
+                className="w-full p-3 bg-gray-700 text-gray-200 rounded mb-4"
+                value={newResource.unit}
+                onChange={(e) => setNewResource({ ...newResource, unit: e.target.value })}
+              />
+              <button type="submit" className="w-full bg-green-600 py-2 rounded text-white">
+                Create
+              </button>
             </form>
+            <button
+              onClick={closeModal}
+              className="mt-4 text-gray-400 hover:text-gray-200"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {isAssignModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
+          <div className="bg-gray-800 p-6 rounded-md shadow-lg w-96">
+            <h3 className="text-2xl font-semibold text-white mb-4">Assign Resource</h3>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                assignResourceToProject();
+              }}
+            >
+              <input
+                type="text"
+                placeholder="Resource ID"
+                className="w-full p-3 bg-gray-700 text-gray-200 rounded mb-4"
+                value={assignResource.resourceId}
+                onChange={(e) =>
+                  setAssignResource({
+                    ...assignResource,
+                    resourceId: e.target.value,
+                  })
+                }
+              />
+              <input
+                type="text"
+                placeholder="Project ID"
+                className="w-full p-3 bg-gray-700 text-gray-200 rounded mb-4"
+                value={assignResource.projectId}
+                onChange={(e) =>
+                  setAssignResource({
+                    ...assignResource,
+                    projectId: e.target.value,
+                  })
+                }
+              />
+              <input
+                type="number"
+                placeholder="Quantity"
+                className="w-full p-3 bg-gray-700 text-gray-200 rounded mb-4"
+                value={assignResource.quantity}
+                onChange={(e) =>
+                  setAssignResource({
+                    ...assignResource,
+                    quantity: Number(e.target.value),
+                  })
+                }
+              />
+              <button type="submit" className="w-full bg-blue-600 py-2 rounded text-white">
+                Assign
+              </button>
+            </form>
+            <button
+              onClick={closeModal}
+              className="mt-4 text-gray-400 hover:text-gray-200"
+            >
+              Cancel
+            </button>
           </div>
         </div>
       )}
     </div>
-  );
-};
+
+
+  )
+}
+
 
 export default Resources;
+
+
+
+

@@ -1,4 +1,5 @@
 import React from "react";
+import Chatbot from "../Components/Chatbot";
 import {
   BarChart,
   Bar,
@@ -168,7 +169,11 @@ const DashboardPage = () => {
           </ul>
         </div>
       </div>
+      <div>
+      <Chatbot />
     </div>
+    </div>
+    
   );
 };
 
