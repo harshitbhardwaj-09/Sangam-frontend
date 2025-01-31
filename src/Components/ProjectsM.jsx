@@ -103,7 +103,7 @@ function Projects() {
 
     try {
       const response = await fetch(
-        `http://localhost:8000/api/updateproject/${selectedProject._id}`,
+        `http://${import.meta.env.VITE_BACKEND}/api/updateproject/${selectedProject._id}`,
         {
           method: "PUT",
           headers: {

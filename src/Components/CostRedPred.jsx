@@ -68,7 +68,7 @@ const CostReductionPage = () => {
 
     try {
       const response = await axios.post(
-        "https://sangam-ml.onrender.com/predict_cost_reduction",
+        `https://${import.meta.env.VITE_BACKEND_ML}/predict_cost_reduction`,
         {
           ...formData,
           task_priority: Number(formData.task_priority),

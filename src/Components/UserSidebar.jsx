@@ -46,7 +46,7 @@ const UserSidebar = () => {
           <Link
             to="/UserDashboard"
             className={`flex items-center gap-4 p-5 transition-colors ${
-              location.pathname === '/UserDashboard'
+              location.pathname === '/'
                 ? 'bg-gray-700 text-yellow-500'
                 : 'text-white hover:bg-gray-700'
             }`}

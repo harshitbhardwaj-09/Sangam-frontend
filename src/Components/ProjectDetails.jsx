@@ -33,7 +33,6 @@ const ProjectDetails = () => {
 
 
   const COLORS = ["#FF6384", "#36A2EB", "#FFCE56"];
-  const GOOGLE_MAPS_API_KEY = '1274d7780f57033ed9118ea96db99182';
   const navigate = useNavigate();
   const { projectId } = useParams();
   const taskData = [
@@ -124,7 +123,7 @@ const ProjectDetails = () => {
     }
 
     try {
-      const response = await fetch(`https://sangam-c2fm.onrender.com/api/getReportByProjectId/${projectId}`);
+      const response = await fetch(`https://${import.meta.env.VITE_BACKEND}/api/getReportByProjectId/${projectId}`);
 
       if (!response.ok) {
         throw new Error('Failed to fetch reports');
@@ -269,7 +268,7 @@ const ProjectDetails = () => {
       }
 
       try {
-        const response = await fetch(`https://sangam-c2fm.onrender.com/api/getReportByProjectId/${projectId}`);
+        const response = await fetch(`https://${import.meta.env.VITE_BACKEND}/api/getReportByProjectId/${projectId}`);
 
         // Checking if the response is successful
         if (!response.ok) {

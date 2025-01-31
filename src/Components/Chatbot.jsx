@@ -1,330 +1,204 @@
-import React, { useState } from "react";
+import { useState } from "react";
 
-function Chatbot() {
-  const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState([
-    { sender: "bot", text: "Hi there! How can I help you today?" },
-  ]);
-  const [input, setInput] = useState("");
 
-  // State for draggable button position
-  const [position, setPosition] = useState({ x: 20, y: 20 });
+import axios from "axios";
+import { motion } from "framer-motion";
 
-  // Toggle chatbot popup
-  const toggleChat = () => {
+
+const getChatResponse = async (message) => {
+  try {
+  
+    const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${import.meta.env.REACT_APP_GEMINI_API_KEY}`;
+
+    // Payload for Gemini API
+    const payload = {
+      contents: [{
+        parts: [{ text: message }],
+      }],
+    };
+
+    // Call the Gemini API
+    const response = await axios.post(GEMINI_API_URL, payload, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    // Parse response and get the text from the first candidate
+    const botReply = response.data.candidates?.[0]?.content?.parts?.[0]?.text || 'Sorry, no reply from Gemini';
+    return botReply;
+  } catch (error) {
+    console.error('Error with Gemini API:', error.response?.data || error.message);
+    return 'Sorry, something went wrong!';
+  }
+};
+const Chatbot = () => {
+  const [message, setMessage] = useState("");
+  const [language, setLanguage] = useState("en");
+  const [conversation, setConversation] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [isOpen, setIsOpen] = useState(false); // State to handle popup visibility
+
+ 
+  const handleSendMessage = async () => {
+    if (!message) return;
+
+    setLoading(true);
+    setConversation([...conversation, { sender: "user", text: message }]);
+
+    try {
+      // Get the bot's response from Gemini API
+      const reply = await getChatResponse(message);
+
+      // Add the bot's response to the conversation
+      setConversation((prev) => [
+        ...prev,
+        { sender: "user", text: message },
+        { sender: "bot", text: reply },
+      ]);
+    } catch (error) {
+      console.error("Error sending message:", error);
+      setConversation((prev) => [
+        ...prev,
+        { sender: "user", text: message },
+        { sender: "bot", text: "Sorry, I couldn't understand that." },
+      ]);
+    }
+
+    setMessage("");
+    setLoading(false);
+  };
+  const togglePopup = () => {
     setIsOpen(!isOpen);
-  };
-
-  // Handle input change
-  const handleInputChange = (e) => {
-    setInput(e.target.value);
-  };
-
-  // Handle message sending
-  const handleSendClick = () => {
-    if (!input.trim()) return;
-
-    const userMessage = { sender: "user", text: input, timestamp: new Date() };
-    setMessages((prevMessages) => [...prevMessages, userMessage]);
-    setInput("");
-
-    setTimeout(() => {
-      const botMessage = {
-        sender: "bot",
-        text: `ChatGPT Response to: "${input}"`,
-        timestamp: new Date(),
-      };
-      setMessages((prevMessages) => [...prevMessages, botMessage]);
-    }, 1000);
-  };
-
-  // Handle dragging
-  const handleDrag = (e) => {
-    const newX = position.x + e.movementX;
-    const newY = position.y + e.movementY;
-    setPosition({ x: newX, y: newY });
   };
 
   return (
     <div className="relative">
-      {/* Draggable Floating Button */}
-      <div
-        className="fixed"
-        style={{ bottom: position.y, right: position.x, cursor: "grab" }}
-        onMouseDown={(e) => {
-          e.preventDefault();
-          document.addEventListener("mousemove", handleDrag);
-          document.addEventListener("mouseup", () => {
-            document.removeEventListener("mousemove", handleDrag);
-          });
-        }}
+    {/* Chatbot Button */}
+    {!isOpen && (
+      <button
+        onClick={togglePopup}
+        className="fixed bottom-6 right-6 bg-gradient-to-r from-indigo-500 to-blue-500 p-4 rounded-full shadow-lg hover:scale-110 hover:shadow-2xl transition-all duration-300 ease-in-out focus:outline-none focus:ring-4 focus:ring-indigo-500"
       >
-        <button
-          onClick={toggleChat}
-          className="bg-blue-500 text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-2xl hover:bg-blue-600 transition"
-        >
-          💬
-        </button>
-      </div>
-
-      {/* Chat Popup */}
-      {isOpen && (
-        <div
-          className="fixed bottom-20 right-4 bg-white w-80 rounded-lg shadow-lg border border-gray-300 transform transition-transform duration-300"
-          style={{ transform: isOpen ? "scale(1)" : "scale(0)" }}
-        >
-          {/* Chat Header */}
-          <div className="bg-blue-500 text-white py-3 px-4 rounded-t-lg flex justify-between items-center">
-            <div className="flex items-center space-x-2">
-              <div className="bg-green-400 w-3 h-3 rounded-full"></div>
-              <span className="text-lg font-semibold">ChatGPT</span>
-            </div>
-            <button
-              onClick={toggleChat}
-              className="text-white hover:text-gray-200 text-lg font-bold"
-            >
-              ✕
-            </button>
-          </div>
-
-          {/* Chat Body */}
-          <div className="p-4 h-64 overflow-y-auto bg-gray-50 flex flex-col space-y-2">
-            {messages.map((msg, index) => (
-              <div
-                key={index}
-                className={`flex ${
-                  msg.sender === "user" ? "justify-end" : "justify-start"
-                }`}
-              >
-                {msg.sender === "bot" && (
-                  <div className="mr-2">
-                    <div className="bg-gray-300 w-8 h-8 rounded-full flex items-center justify-center text-gray-700">
-                      🤖
-                    </div>
-                  </div>
-                )}
-                <div
-                  className={`${
-                    msg.sender === "user"
-                      ? "bg-blue-500 text-white"
-                      : "bg-gray-200 text-gray-800"
-                  } p-3 rounded-lg max-w-xs`}
-                >
-                  {msg.text}
-                  {msg.timestamp && (
-                    <div className="text-xs text-gray-500 mt-1">
-                      {msg.timestamp.toLocaleTimeString()}
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Chat Input */}
-          <div className="p-4 bg-gray-100 border-t">
-            <div className="flex items-center space-x-2">
-              <input
-                type="text"
-                value={input}
-                onChange={handleInputChange}
-                placeholder="Ask me anything..."
-                className="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <button
-                onClick={handleSendClick}
-                disabled={!input.trim()}
-                className={`px-4 py-2 rounded-lg transition ${
-                  input.trim()
-                    ? "bg-blue-500 text-white hover:bg-blue-600"
-                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                }`}
-              >
-                Send
-              </button>
-            </div>
-          </div>
+        <img
+          src="/path/to/chatbot-logo.png"  // Update with your actual logo path
+          alt="Chatbot Logo"
+          className="w-8 h-8 object-cover transition-all duration-300 transform hover:rotate-45"  // Added rotation effect on hover
+        />
+      </button>
+    )}
+  
+    {/* Chatbot Popup */}
+    {isOpen && (
+      <motion.div
+        className="fixed bottom-6 right-6 w-full max-w-md bg-white p-6 rounded-lg shadow-xl border border-gray-200 z-50"
+        initial={{ opacity: 0, y: 100 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: 100 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+      >
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-semibold text-indigo-600">Multilingual Chatbot</h1>
+          <button
+            onClick={togglePopup}
+            className="text-gray-500 hover:text-gray-700 text-2xl font-bold transition-all duration-200 focus:outline-none"
+          >
+            &times;
+          </button>
         </div>
-      )}
-    </div>
+  
+        {/* Language Dropdown */}
+        <div className="mb-6">
+          <label htmlFor="language" className="block text-lg font-medium text-gray-700 mb-2">
+            Choose Language
+          </label>
+          <select
+            id="language"
+            value={language}
+            onChange={(e) => setLanguage(e.target.value)}
+            className="w-full p-3 border rounded-lg bg-gray-100 text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-200"
+          >
+            <option value="en">English</option>
+            <option value="es">Spanish</option>
+            <option value="fr">French</option>
+            <option value="de">German</option>
+            <option value="it">Italian</option>
+            <option value="hi">Hindi</option>
+            {/* Add more languages as needed */}
+          </select>
+        </div>
+  
+        {/* Conversation Area */}
+        <div className="h-72 overflow-y-auto mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200 shadow-sm">
+          {conversation.map((msg, index) => (
+            <motion.div
+              key={index}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5, ease: "easeOut" }}
+              className={`mb-3 ${msg.sender === "user" ? "text-right" : "text-left"}`}
+            >
+              <div
+                className={`inline-block px-4 py-2 rounded-lg transition-all duration-300 transform ${
+                  msg.sender === "user"
+                    ? "bg-indigo-600 text-white shadow-lg scale-105"
+                    : "bg-gradient-to-r from-gray-300 to-gray-100 text-gray-800 shadow-sm scale-100"
+                }`}
+              >
+                {msg.text}
+              </div>
+            </motion.div>
+          ))}
+          {loading && (
+            <motion.div
+              className="text-left mb-3 text-gray-600"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5, ease: "easeOut" }}
+            >
+              <div className="inline-block px-4 py-2 bg-gray-300 text-gray-600 rounded-lg">
+                Typing...
+              </div>
+            </motion.div>
+          )}
+        </div>
+  
+        {/* Message Input and Send Button */}
+        <div className="flex items-center space-x-4">
+          <div className="relative w-full">
+            <input
+              type="text"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              className="w-full p-3 border rounded-lg bg-gray-100 text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-200 focus:border-indigo-500"
+              placeholder="Type your message..."
+            />
+            {message && (
+              <button
+                onClick={() => setMessage('')}
+                className="absolute right-3 top-3 text-gray-500 hover:text-gray-700"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
+          </div>
+          <button
+            onClick={handleSendMessage}
+            disabled={loading}
+            className="p-3 bg-gradient-to-r from-indigo-500 to-blue-500 text-white rounded-lg disabled:bg-gray-400 hover:scale-110 hover:shadow-xl transition-all duration-200"
+          >
+            {loading ? "Sending..." : "Send"}
+          </button>
+        </div>
+      </motion.div>
+    )}
+  </div>
+  
+
+
   );
-}
+};
 
 export default Chatbot;
-
-
-
-
-
-// import React, { useState } from "react";
-// import OpenAI from "openai";
-
-// const openai = new OpenAI({
-//   apiKey: "your-openai-api-key", // Replace with your OpenAI API key
-// });
-
-// function Chatbot() {
-//   const [isOpen, setIsOpen] = useState(false);
-//   const [messages, setMessages] = useState([
-//     { sender: "bot", text: "Hi there! How can I help you today?" },
-//   ]);
-//   const [input, setInput] = useState("");
-
-//   // State for draggable button position
-//   const [position, setPosition] = useState({ x: 20, y: 20 });
-
-//   // Toggle chatbot popup
-//   const toggleChat = () => {
-//     setIsOpen(!isOpen);
-//   };
-
-//   // Handle input change
-//   const handleInputChange = (e) => {
-//     setInput(e.target.value);
-//   };
-
-//   // Handle message sending
-//   const handleSendClick = async () => {
-//     if (!input.trim()) return;
-
-//     const userMessage = { sender: "user", text: input, timestamp: new Date() };
-//     setMessages((prevMessages) => [...prevMessages, userMessage]);
-//     setInput("");
-
-//     try {
-//       // Call the OpenAI API
-//       const completion = await openai.chat.completions.create({
-//         model: "gpt-4",
-//         messages: [{ role: "user", content: input }],
-//       });
-
-//       const botMessage = {
-//         sender: "bot",
-//         text: completion.choices[0].message.content,
-//         timestamp: new Date(),
-//       };
-//       setMessages((prevMessages) => [...prevMessages, botMessage]);
-//     } catch (error) {
-//       const errorMessage = {
-//         sender: "bot",
-//         text: "Sorry, I couldn't process your request. Please try again later.",
-//         timestamp: new Date(),
-//       };
-//       setMessages((prevMessages) => [...prevMessages, errorMessage]);
-//       console.error("Error calling OpenAI API:", error);
-//     }
-//   };
-
-//   // Handle dragging
-//   const handleDrag = (e) => {
-//     const newX = position.x + e.movementX;
-//     const newY = position.y + e.movementY;
-//     setPosition({ x: newX, y: newY });
-//   };
-
-//   return (
-//     <div className="relative">
-//       {/* Draggable Floating Button */}
-//       <div
-//         className="fixed"
-//         style={{ bottom: position.y, right: position.x, cursor: "grab" }}
-//         onMouseDown={(e) => {
-//           e.preventDefault();
-//           document.addEventListener("mousemove", handleDrag);
-//           document.addEventListener("mouseup", () => {
-//             document.removeEventListener("mousemove", handleDrag);
-//           });
-//         }}
-//       >
-//         <button
-//           onClick={toggleChat}
-//           className="bg-blue-500 text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-2xl hover:bg-blue-600 transition"
-//         >
-//           💬
-//         </button>
-//       </div>
-
-//       {/* Chat Popup */}
-//       {isOpen && (
-//         <div
-//           className="fixed bottom-20 right-4 bg-white w-80 rounded-lg shadow-lg border border-gray-300 transform transition-transform duration-300"
-//           style={{ transform: isOpen ? "scale(1)" : "scale(0)" }}
-//         >
-//           {/* Chat Header */}
-//           <div className="bg-blue-500 text-white py-3 px-4 rounded-t-lg flex justify-between items-center">
-//             <div className="flex items-center space-x-2">
-//               <div className="bg-green-400 w-3 h-3 rounded-full"></div>
-//               <span className="text-lg font-semibold">ChatGPT</span>
-//             </div>
-//             <button
-//               onClick={toggleChat}
-//               className="text-white hover:text-gray-200 text-lg font-bold"
-//             >
-//               ✕
-//             </button>
-//           </div>
-
-//           {/* Chat Body */}
-//           <div className="p-4 h-64 overflow-y-auto bg-gray-50 flex flex-col space-y-2">
-//             {messages.map((msg, index) => (
-//               <div
-//                 key={index}
-//                 className={`flex ${
-//                   msg.sender === "user" ? "justify-end" : "justify-start"
-//                 }`}
-//               >
-//                 {msg.sender === "bot" && (
-//                   <div className="mr-2">
-//                     <div className="bg-gray-300 w-8 h-8 rounded-full flex items-center justify-center text-gray-700">
-//                       🤖
-//                     </div>
-//                   </div>
-//                 )}
-//                 <div
-//                   className={`${
-//                     msg.sender === "user"
-//                       ? "bg-blue-500 text-white"
-//                       : "bg-gray-200 text-gray-800"
-//                   } p-3 rounded-lg max-w-xs`}
-//                 >
-//                   {msg.text}
-//                   {msg.timestamp && (
-//                     <div className="text-xs text-gray-500 mt-1">
-//                       {msg.timestamp.toLocaleTimeString()}
-//                     </div>
-//                   )}
-//                 </div>
-//               </div>
-//             ))}
-//           </div>
-
-//           {/* Chat Input */}
-//           <div className="p-4 bg-gray-100 border-t">
-//             <div className="flex items-center space-x-2">
-//               <input
-//                 type="text"
-//                 value={input}
-//                 onChange={handleInputChange}
-//                 placeholder="Ask me anything..."
-//                 className="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-//               />
-//               <button
-//                 onClick={handleSendClick}
-//                 disabled={!input.trim()}
-//                 className={`px-4 py-2 rounded-lg transition ${
-//                   input.trim()
-//                     ? "bg-blue-500 text-white hover:bg-blue-600"
-//                     : "bg-gray-300 text-gray-500 cursor-not-allowed"
-//                 }`}
-//               >
-//                 Send
-//               </button>
-//             </div>
-//           </div>
-//         </div>
-//       )}
-//     </div>
-//   );
-// }
-
-// export default Chatbot;

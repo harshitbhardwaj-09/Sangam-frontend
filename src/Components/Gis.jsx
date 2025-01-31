@@ -1,12 +1,13 @@
-import React, { useState, useEffect, useRef } from 'react';
+import  { useState, useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Polyline, Marker, useMap } from 'react-leaflet';
+import PropTypes from 'prop-types';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
-import 'leaflet.heat';  // Import the leaflet.heat plugin
+import 'leaflet.heat'; 
 import { Button, Box, Typography, Container, Card, CardContent, Switch } from '@mui/material';
-import { Margin, Share } from '@mui/icons-material';
+import { Share } from '@mui/icons-material';
 
-const WEATHER_API_KEY = '1274d7780f57033ed9118ea96db99182'; // Get your own key from https://openweathermap.org/api
+const WEATHER_API_KEY = import.meta.env.VITE_WEATHER_API_KEY; 
 
 function MapController({ center, zoom }) {
   const map = useMap();
@@ -16,19 +17,23 @@ function MapController({ center, zoom }) {
   return null;
 }
 
+MapController.propTypes = {
+  center: PropTypes.arrayOf(PropTypes.number).isRequired,
+  zoom: PropTypes.number.isRequired,
+};
+
+
 function Gis() {
   const [savedPaths, setSavedPaths] = useState([]);
   const [currentPath, setCurrentPath] = useState([]);
   const [currentLocation, setCurrentLocation] = useState(null);
   const [mapCenter, setMapCenter] = useState([28.674855, 77.503005]);
-  const [zoom, setZoom] = useState(15);
+  const [zoom] = useState(15);
   const [markerPosition, setMarkerPosition] = useState(null);
   const [weather, setWeather] = useState(null);
   const [darkMode, setDarkMode] = useState(false);
 
-  const pathIndex = useRef(0); // Keeps track of the index of the current position in the path
-
-  // Fetch weather data for the current location
+  const pathIndex = useRef(0); 
   useEffect(() => {
     if (currentLocation) {
       const fetchWeatherData = async () => {
@@ -36,10 +41,14 @@ function Gis() {
         const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${WEATHER_API_KEY}&units=metric`;
         try {
           const response = await fetch(url);
+          if (!response.ok) {
+            throw new Error('Failed to fetch weather data');
+          }
           const data = await response.json();
           setWeather(data);
         } catch (error) {
           console.error('Error fetching weather data:', error);
+          alert('Failed to load weather data. Please try again later.');
         }
       };
       fetchWeatherData();
@@ -53,7 +62,7 @@ function Gis() {
 
   useEffect(() => {
     if (currentLocation) {
-      pathIndex.current = 0; // Reset index each time location is updated
+      pathIndex.current = 0;
       setMarkerPosition(currentLocation);
     }
   }, [currentLocation]);
@@ -75,7 +84,7 @@ function Gis() {
     for (let i = 0; i < path.length - 1; i++) {
       const [lat1, lon1] = path[i];
       const [lat2, lon2] = path[i + 1];
-      const R = 6371; // Radius of Earth in km
+      const R = 6371;
       const dLat = ((lat2 - lat1) * Math.PI) / 180;
       const dLon = ((lon2 - lon1) * Math.PI) / 180;
       const a =
@@ -85,12 +94,11 @@ function Gis() {
           Math.sin(dLon / 2) *
           Math.sin(dLon / 2);
       const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-      totalDistance += R * c; // Distance in km
+      totalDistance += R * c;
     }
     return totalDistance;
   };
-
-  const startTracking = () => {
+const startTracking = () => {
     navigator.geolocation.watchPosition(
       (position) => {
         const newLocation = [position.coords.latitude, position.coords.longitude];
@@ -120,9 +128,9 @@ function Gis() {
         setMarkerPosition(currentPath[pathIndex.current]);
         pathIndex.current += 1;
       } else {
-        clearInterval(intervalId); // Stop the animation when the path is complete
+        clearInterval(intervalId);
       }
-    }, 500); // Move marker every 500ms
+    }, 500);
   };
 
   const deletePath = (index) => {
@@ -167,45 +175,16 @@ function Gis() {
         heatLayer.addTo(map);
         return () => map.removeLayer(heatLayer);
       }
-    }, [currentPath, map]);
+    }, [map]);
 
     return null;
   };
-  const postPathToBackend = async (projectId, path, timestamp, distance) => {
-    const apiUrl = `https://${import.meta.env.VITE_BACKEND}/api/path`;
-    const requestBody = {
-      projectId,
-      path,
-      timestamp,
-      distance,
-    };
-  
-    try {
-      const response = await fetch(apiUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(requestBody),
-      });
-  
-      if (!response.ok) {
-        throw new Error(`Error: ${response.status} ${response.statusText}`);
-      }
-  
-      const data = await response.json();
-      console.log("Path successfully saved to the backend:", data);
-      alert("Path saved successfully!");
-    } catch (error) {
-      console.error("Failed to save path to backend:", error);
-      alert("Failed to save path. Please try again.");
-    }
-  };
-  
+
+
   return (
     <div style={{ backgroundColor: darkMode ? '#101114' : '#fff', color: darkMode ? '#fff' : '#000' }}>
-      <Container maxWidth="md" >
-        <Typography variant="h3" align="center" style={{ margin: '40px 0px'  }}>
+      <Container maxWidth="md">
+        <Typography variant="h3" align="center" style={{ margin: '40px 0px' }}>
           Path Tracker
         </Typography>
 
@@ -264,15 +243,8 @@ function Gis() {
           ))}
           {currentPath.length > 1 && <Polyline positions={currentPath} color="green" />}
           {markerPosition && (
-            <Marker position={markerPosition}>
-              <div
-                style={{
-                  backgroundColor: 'red',
-                  width: '20px',
-                  height: '20px',
-                  borderRadius: '50%',
-                }}
-              />
+            <Marker position={markerPosition} icon={L.divIcon({ className: 'leaflet-div-icon', html: '<div style="background-color:red;width:20px;height:20px;border-radius:50%;"></div>' })}>
+              <div />
             </Marker>
           )}
           <MapWithHeatmap />

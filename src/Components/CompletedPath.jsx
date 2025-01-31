@@ -9,7 +9,7 @@ const TotalPath = () => {
     const fetchData = async () => {
       try {
         const response = await fetch(
-          'https://sangam-c2fm.onrender.com/api/getpathbyid/6749b789545dcca89c35d67a' 
+          `https://${import.meta.env.VITE_BACKEND}/api/getpathbyid/6749b789545dcca89c35d67a`
         );
         const data = await response.json();
         const pathData = data.totalpath[0];

@@ -16,10 +16,9 @@ const News = () => {
     setLoading(true);
     try {
       const response = await fetch(
-        `https://newsapi.org/v2/everything?q=${encodeURIComponent(
-          query
-        )}&language=en&apiKey=55b3b3fef8c4400a87069470a1cd5dd2`
+        `https://newsapi.org/v2/everything?q=${encodeURIComponent(query)}&language=en&apiKey=${import.meta.env.VITE_NEWS_API_KEY}`
       );
+      
       const data = await response.json();
       setArticles(data.articles);
     } catch (error) {

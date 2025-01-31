@@ -54,9 +54,9 @@ const OfficerSidebar = () => {
         {/* Menu List */}
         <div className="mt-8 overflow-y-auto">
           <Link
-            to="/dashboard"
+            to="/"
             className={`flex items-center gap-4 p-5 transition-colors ${
-              location.pathname === '/dashboard'
+              location.pathname === '/'
                 ? 'bg-gray-700 text-yellow-500'
                 : 'text-white hover:bg-gray-700'
             }`}

@@ -25,7 +25,7 @@ const MapLine = () => {
   const fetchCircle1Location = async () => {
     try {
       const response = await fetch(
-        "https://sangam-c2fm.onrender.com/api/getnewpath/67598e583e5e451ba95f8a42"
+        `https://${import.meta.env.VITE_BACKEND}/api/getnewpath/67598e583e5e451ba95f8a42`
       );
       const data = await response.json();
       // console.log("Data:", data.location1.lat);

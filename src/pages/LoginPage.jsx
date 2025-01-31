@@ -31,7 +31,7 @@ const LoginPage = ({ resource }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            const response = await fetch('https://sangam-c2fm.onrender.com/admin/login', {
+            const response = await fetch(`https://${import.meta.env.VITE_BACKEND}/admin/login`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -50,12 +50,12 @@ const LoginPage = ({ resource }) => {
                 setFormData({ name: '', email: '', password: '' });
                 console.log(formData);
                 if (uuser.role === 'Officer') {
-                    navigate('/dashboard');
+                    navigate('/');
                     // Redirect to Officer Dashboard
                 } else if (uuser.role === 'Main Admin') {
-                    navigate('/dashboard'); // Redirect to Admin Dashboard
+                    navigate('/'); // Redirect to Admin Dashboard
                 } else if (uuser.role === 'Worker') {
-                    navigate('/dashboard'); // Redirect to User Dashboard
+                    navigate('/'); // Redirect to User Dashboard
                 } else {
                     alert('Unrecognized role');
                 }

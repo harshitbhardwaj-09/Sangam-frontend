@@ -44,7 +44,7 @@ const Register = () => {
     try {
         console.log("Payload:", formData);
         const response = await axios.post(
-            "https://sangam-c2fm.onrender.com/admin/register",
+            `https://${import.meta.env.VITE_BACKEND}/admin/register`,
             formData,
             {
               headers: {
@@ -59,7 +59,7 @@ const Register = () => {
       if (response.status === 201) {
         // If registration is successful, navigate to login page
         alert("Account Created Successfully")
-        navigate("/loginn");
+        navigate("/login");
       }
     } catch (error) {
       setLoading(false);
@@ -231,7 +231,7 @@ const Register = () => {
         </button>
         <button
           type="button"
-          onClick={() => navigate("/loginn")}
+          onClick={() => navigate("/login")}
           className="w-full bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-lg hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400"
         >
           Already have an account? Login

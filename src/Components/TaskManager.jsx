@@ -59,7 +59,7 @@ const TaskManager = () => {
   // Fetch data and populate the state
   const fetchData = async () => {
     try {
-      const response = await fetch("https://sangam-c2fm.onrender.com/admin/getalluser");
+      const response = await fetch(`https://${import.meta.env.VITE_BACKEND}/admin/getalluser`);
       const jsonData = await response.json();
       setData(jsonData); // Store full data for name-id mapping
     } catch (error) {
@@ -89,7 +89,7 @@ const TaskManager = () => {
   // Fetch names and populate the state
   const fetchNames = async () => {
     try {
-      const response = await fetch("https://sangam-c2fm.onrender.com/api/getallprojects");
+      const response = await fetch(`https://${import.meta.env.VITE_BACKEND}/api/getallprojects`);
       const jsonData = await response.json();
       setNames(jsonData); // Store full data for name-id mapping
     } catch (error) {
@@ -181,7 +181,7 @@ const TaskManager = () => {
   };
 
   async function fetchReportByTaskId(taskId) {
-    const apiUrl = `https://sangam-c2fm.onrender.com/api/getreportbytaskid/${taskId}`;
+    const apiUrl = `https://${import.meta.env.VITE_BACKEND}/api/getreportbytaskid/${taskId}`;
     // console.log(taskId);
     try {
       // Fetch the data from the API
@@ -262,7 +262,7 @@ const TaskManager = () => {
     try {
       // Upload the report
       const response = await axios.post(
-        `https://sangam-c2fm.onrender.com/api/uploadtaskreport/${taskId}`,
+        `https://${import.meta.env.VITE_BACKEND}/api/uploadtaskreport/${taskId}`,
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },
@@ -274,7 +274,7 @@ const TaskManager = () => {
   
         // Update the task's status in the backend
         await axios.patch(
-          `https://sangam-c2fm.onrender.com/api/project/task/${taskId}`,
+          `https://${import.meta.env.VITE_BACKEND}/api/project/task/${taskId}`,
           { status: "Submitted" } // Ensure the backend handles this field
         );
   

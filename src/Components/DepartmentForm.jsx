@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import PropTypes from "prop-types";
 import { message } from "antd";
 
 const AddDepartmentForm = ({ onAddDepartment }) => {
@@ -99,6 +100,9 @@ const AddDepartmentForm = ({ onAddDepartment }) => {
       </div>
     </div>
   );
+};
+AddDepartmentForm.propTypes = {
+  onAddDepartment: PropTypes.func.isRequired,
 };
 
 export default AddDepartmentForm;

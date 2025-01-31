@@ -10,8 +10,8 @@ const VideoConference = ({ roomID }) => {
       document.body.appendChild(script);
       script.onload = () => {
         const ZegoUIKitPrebuilt = window.ZegoUIKitPrebuilt;
-        const appID = 228068426;
-        const serverSecret = '3cad7c2ae415bf96c4cadb4c6d5d55a4';
+        const appID = Number(import.meta.env.VITE_appID);
+        const serverSecret = import.meta.env.VITE_serverSecret;
         const userID = Math.floor(Math.random() * 10000) + '';
         const userName = 'userName' + userID;
         const kitToken = ZegoUIKitPrebuilt.generateKitTokenForTest(appID, serverSecret, roomID, userID, userName);

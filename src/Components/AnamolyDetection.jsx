@@ -33,7 +33,7 @@ const AnomalyDetectionPage = () => {
   const [predictionResult, setPredictionResult] = useState(null);
 
   const postAnomalyPrediction = async () => {
-    const apiUrl = "https://sangam-ml.onrender.com/predict_anomaly";
+    const apiUrl = `https://${import.meta.env.VITE_BACKEND_ML}/predict_anomaly`;
     const data = {
       task_priority: taskPriority,
       task_complexity: taskComplexity,

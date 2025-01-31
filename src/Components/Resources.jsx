@@ -121,7 +121,7 @@ const Resources = () => {
 
     try {
       const response = await fetch(
-        `https://sangam-c2fm.onrender.com/api/project/${projectId}/resources`
+        `https://${import.meta.env.VITE_BACKEND}/api/project/${projectId}/resources`
       );
       if (!response.ok) {
         throw new Error("Failed to fetch resources. Please check the Project ID.");

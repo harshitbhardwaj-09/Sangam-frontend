@@ -1,18 +1,16 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { MapContainer, TileLayer, Polyline, Marker } from "react-leaflet";
 import { Button, Container, Typography, Box, Card, CardContent } from "@mui/material";
 import { useEffect } from "react";
 const postPathToBackend = async (projectId, path, timestamp, distance) => {
-  const apiUrl = "https://backend-code-5-2tsr.onrender.com/api/path";
+  const apiUrl = `https://${import.meta.env.VITE_BACKEND}/api/path`;
   const requestBody = {
     projectId,
     path,
     timestamp,
     distance,
   };
-
-
   try {
     const response = await fetch(apiUrl, {
       method: "POST",
@@ -21,13 +19,9 @@ const postPathToBackend = async (projectId, path, timestamp, distance) => {
       },
       body: JSON.stringify(requestBody),
     });
-
-
     if (!response.ok) {
       throw new Error(`Error: ${response.status} ${response.statusText}`);
     }
-
-
     const data = await response.json();
     alert("Path saved successfully!");
     return data;
@@ -37,8 +31,6 @@ const postPathToBackend = async (projectId, path, timestamp, distance) => {
     return null;
   }
 };
-
-
 function GisMap() {
   const { projectId } = useParams(); // Get projectId from URL
   const [currentPath, setCurrentPath] = useState([]);
@@ -47,7 +39,7 @@ function GisMap() {
  // Fetch project path data from the API
  useEffect(() => {
   const fetchProjectPath = async () => {
-    const apiUrl = `https://sangam-c2fm.onrender.com/api/path/${projectId}`;
+    const apiUrl = `https://${import.meta.env.VITE_BACKEND}/api/path/${projectId}`;
     try {
       const response = await fetch(apiUrl);
       if (!response.ok) {
@@ -59,9 +51,7 @@ function GisMap() {
       console.error("Failed to fetch project path:", error);
     }
   };
-
-
-  fetchProjectPath();
+fetchProjectPath();
 }, [projectId])
   const startTracking = () => {
     navigator.geolocation.watchPosition(
@@ -76,22 +66,16 @@ function GisMap() {
       { enableHighAccuracy: true, distanceFilter: 1 }
     );
   };
-
-
-  const stopTrackingAndSave = async () => {
+const stopTrackingAndSave = async () => {
     const timestamp = new Date().toISOString();
     const distance = calculateDistance(currentPath);
     const savedData = await postPathToBackend(projectId, currentPath, timestamp, distance);
-
-
-    if (savedData) {
+  if (savedData) {
       alert("Path saved successfully to project!");
       setCurrentPath([]);
     }
   };
-
-
-  const calculateDistance = (path) => {
+const calculateDistance = (path) => {
     if (path.length < 2) return 0;
     let totalDistance = 0;
     for (let i = 0; i < path.length - 1; i++) {
@@ -111,9 +95,7 @@ function GisMap() {
     }
     return totalDistance;
   };
-
-
-  return (
+return (
     <Container>
       <Typography variant="h4" className="my-8" align="center" marginTop="20px" gutterBottom>
         GIS Map for Project: {projectId}
@@ -146,11 +128,7 @@ function GisMap() {
           </CardContent>
         </Card>
       )}
-
-
-
-
-      <Box display="flex" justifyContent="center" gap={2} marginBottom={2}>
+     <Box display="flex" justifyContent="center" gap={2} marginBottom={2}>
         <Button variant="contained" color="primary" onClick={startTracking}>
           Start Tracking
         </Button>
@@ -158,8 +136,6 @@ function GisMap() {
           Stop and Save
         </Button>
       </Box>
-
-
       <MapContainer center={[28.674855, 77.503005]} zoom={15} style={{ height: "500px", width: "100%" }}>
         <TileLayer url="https://tile.openstreetmap.org/{z}/{x}/{y}.png" />
         {currentPath.length > 1 && <Polyline positions={currentPath} color="blue" />}
@@ -168,6 +144,4 @@ function GisMap() {
     </Container>
   );
 }
-
-
 export default GisMap;

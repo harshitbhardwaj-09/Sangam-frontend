@@ -3,10 +3,10 @@ import { MapContainer, TileLayer, Polyline, Marker, Popup } from "react-leaflet"
 import "leaflet/dist/leaflet.css";
 
 const Gis = () => {
-  const [currentLocation, setCurrentLocation] = useState(null);
+  const [currentLocation, setCurrentLocation] = useState([37.775, -122.4196]); // Default current location
   const [hoverInfo, setHoverInfo] = useState(null);
   const [selectedCoordinates, setSelectedCoordinates] = useState(0); // Index of selected coordinates
-  const [coordinatesList, setCoordinatesList] = useState([
+  const [coordinatesList] = useState([
     {
       id: "ProjectID-001",
       path: [
@@ -42,7 +42,8 @@ const Gis = () => {
   ]);
 
   useEffect(() => {
-    setCurrentLocation([37.775, -122.4196]); // Example current location
+    // Simulate fetching current location if required
+    setCurrentLocation([37.775, -122.4196]); // Set current location to default value for now
   }, []);
 
   const handleMouseOver = (projectId, conflict) => {
@@ -122,7 +123,7 @@ const Gis = () => {
       {/* Map Section */}
       <div className="flex-1 relative">
         <MapContainer
-          center={currentLocation || coordinatesList[selectedCoordinates].path[0]}
+          center={currentLocation}
           zoom={15}
           scrollWheelZoom={true}
           className="h-full w-full"
@@ -175,4 +176,3 @@ const Gis = () => {
 };
 
 export default Gis;
-

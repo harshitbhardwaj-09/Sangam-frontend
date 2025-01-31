@@ -1,4 +1,5 @@
 import { useState } from "react";
+import PropTypes from 'prop-types';
 
 const DepartmentList = ({ departments, onEditDepartment, onDeleteDepartment }) => {
   const [editIndex, setEditIndex] = useState(null);
@@ -10,6 +11,10 @@ const DepartmentList = ({ departments, onEditDepartment, onDeleteDepartment }) =
   };
 
   const handleSave = () => {
+    if (editName.trim() === "") {
+      alert("Department name cannot be empty.");
+      return;
+    }
     onEditDepartment(editIndex, editName);
     setEditIndex(null);
     setEditName("");
@@ -21,16 +26,21 @@ const DepartmentList = ({ departments, onEditDepartment, onDeleteDepartment }) =
       {departments.length > 0 ? (
         <ul className="space-y-2">
           {departments.map((department, index) => (
-            <li key={index} className="flex justify-between items-center bg-gray-100 p-2 rounded-md">
+            <li
+              key={index}
+              className="flex justify-between items-center bg-gray-100 p-2 rounded-md"
+            >
               {editIndex === index ? (
                 <>
                   <input
+                    key="edit-input"  // Added unique key for the input
                     type="text"
                     value={editName}
                     onChange={(e) => setEditName(e.target.value)}
                     className="p-1 border rounded-md flex-grow"
                   />
                   <button
+                    key="save-button"  // Added unique key for the button
                     onClick={handleSave}
                     className="ml-2 bg-green-500 text-white py-1 px-3 rounded-md hover:bg-green-600"
                   >
@@ -65,5 +75,11 @@ const DepartmentList = ({ departments, onEditDepartment, onDeleteDepartment }) =
     </div>
   );
 };
+DepartmentList.propTypes = {
+  departments: PropTypes.array.isRequired,
+  onEditDepartment: PropTypes.func.isRequired,
+  onDeleteDepartment: PropTypes.func.isRequired,
+};
 
 export default DepartmentList;
+

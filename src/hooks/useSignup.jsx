@@ -19,7 +19,7 @@ const useSignup = () => {
     try {
       setLoading(true);
     
-      const res = await fetch("https://backend-code-5-2tsr.onrender.com/admin/register", {
+      const res = await fetch(`https://${import.meta.env.VITE_BACKEND}/admin/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(values),

@@ -46,7 +46,7 @@ const DepartmentPredPage = () => {
     e.preventDefault();
     try {
       const response = await fetch(
-        "https://sangam-ml.onrender.com/predict_department_conflict",
+        `https://${import.meta.env.VITE_BACKEND_ML}/predict_department_conflict`,
         {
           method: "POST",
           headers: {

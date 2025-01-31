@@ -93,7 +93,7 @@ const CompletedPath = () => {
     const fetchData = async () => {
       try {
         const response = await fetch(
-          'https://sangam-c2fm.onrender.com/api/getcompletedpathbyid/6749b789545dcca89c35d67a' 
+          `https://${import.meta.env.VITE_BACKEND}/api/getcompletedpathbyid/6749b789545dcca89c35d67a`
         );
         const data = await response.json();
         const pathData = data.completedPath[0];

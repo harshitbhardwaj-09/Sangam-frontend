@@ -44,7 +44,7 @@ const ResourceAllocationPage = () => {
     e.preventDefault();
     try {
       const response = await fetch(
-        "https://sangam-ml.onrender.com/predict_resource_allocation",
+        `https://${import.meta.env.VITE_BACKEND_ML}/predict_resource_allocation`,
         {
           method: "POST",
           headers: {
